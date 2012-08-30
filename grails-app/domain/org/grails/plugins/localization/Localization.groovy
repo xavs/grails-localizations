@@ -241,18 +241,20 @@ class Localization {
             if (key && key.length() <= 250 && txt && txt.length() <= 2000) {
                 rec = Localization.findByCodeAndLocale(key, loc)
                 if (!rec) {
-                    Localization.withTransaction {status ->
-                        rec = new Localization()
-                        rec.code = key
-                        rec.locale = loc
-                        rec.text = txt
-                        if (rec.save(flush: true)) {
-                            counts.imported = counts.imported + 1
-                        } else {
-                            counts.skipped = counts.skipped + 1
-                            status.setRollbackOnly()
+                    Localization.withNewSession { session ->
+                        Localization.withTransaction {status ->
+                            rec = new Localization()
+                            rec.code = key
+                            rec.locale = loc
+                            rec.text = txt
+                            if (rec.save(flush: true)) {
+                                counts.imported = counts.imported + 1
+                            } else {
+                                counts.skipped = counts.skipped + 1
+                             status.setRollbackOnly()
+                            }
                         }
-                    }
+					}
                 } else {
                     counts.skipped = counts.skipped + 1
                 }
